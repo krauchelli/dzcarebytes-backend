@@ -12,3 +12,75 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Patient {
+  id Int @id @default(autoincrement())
+  email String 
+  password String
+  name String
+  age Int
+  medical_records Medical_Record[]
+  schedulings Scheduling[]
+}
+
+model Doctor {
+  id Int @id @default(autoincrement())
+  email String 
+  password String
+  name String
+  specialist String
+  medical_records Medical_Record[]
+  schedulings Scheduling[]
+}
+
+model Pharmacy {
+  id Int @id @default(autoincrement())
+  medicine_name String
+  stock Int 
+  price Decimal
+  medical_records Medical_Record[] 
+}
+
+model Medical_Record {
+  id Int @id @default(autoincrement())
+  patient_id Int 
+  doctor_id Int 
+  diagnosis String
+  medicine_id Int
+  quantity Int
+  patients Patient @relation(fields: [patient_id], references: [id])
+  doctors Doctor @relation(fields: [doctor_id], references: [id])
+  medicines Pharmacy @relation(fields: [medicine_id], references: [id])
+}
+
+enum Status_Scheduling {
+  Scheduled
+  Completed
+  Cancelled
+}
+
+model Scheduling {
+  id Int @id @default(autoincrement())
+  patient_id Int
+  doctor_id Int
+  date DateTime
+  status Status_Scheduling
+  price Decimal
+  patients Patient @relation(fields: [patient_id], references: [id])
+  doctors Doctor @relation(fields: [doctor_id], references: [id])
+} 
+
+enum Status_Billing {
+  Pending
+  Paid
+  Failed
+}
+model Billing {
+  id Int @id @default(autoincrement())
+  patient_id Int
+  medicine_price Decimal
+  scheduling_price Decimal //Scheduling.price
+  total_price Decimal
+  status Status_Billing
+  payment_link String
+}
