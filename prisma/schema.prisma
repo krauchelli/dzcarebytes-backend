@@ -26,6 +26,8 @@ model User {
   
   schedulingAsPatient Scheduling[] @relation("PatientScheduling")
   schedulingAsDoctor Scheduling[] @relation("DoctorScheduling")
+
+  billing Billing[]
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -76,12 +78,14 @@ model Scheduling {
 
 model Billing {
   id String @id @default(uuid())
-  patient_id Int
+  patient_id String
   medicine_price Decimal
   scheduling_price Decimal //Scheduling.price
   total_price Decimal
   status Status_Billing
   payment_link String
+
+  patient User @relation(fields: [patient_id], references: [id])
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
