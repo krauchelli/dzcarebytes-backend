@@ -19,7 +19,7 @@ app.get('/', (req, res) => {
 });
 
 // other routes
-// app.use('/api/v1', indexRoutes);
+app.use('/api/v1', indexRoutes);
 
 // handler if route does not exist
 app.use((req, res, next) => {
