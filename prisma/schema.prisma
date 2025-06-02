@@ -13,52 +13,47 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Patient {
-  id Int @id @default(autoincrement())
-  email String 
-  password String
-  name String
-  age Int
-  medical_records Medical_Record[]
-  schedulings Scheduling[]
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+enum User_Role {
+  Admin
+  Doctor
+  Patient
 }
 
-model Doctor {
-  id Int @id @default(autoincrement())
-  email String 
-  password String
+model User {
+  id String @id @default(uuid())
+  role User_Role
+  email String
   name String
-  specialist String
-  medical_records Medical_Record[]
-  schedulings Scheduling[]
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  age Int 
+  medicalRecordsAsPatient Medical_Record[] @relation("PatientMedicalRecords")
+  medicalRecordsAsDoctor  Medical_Record[] @relation("DoctorMedicalRecords")
+  schedulingAsPatient Scheduling[] @relation("PatientScheduling")
+  schedulingAsDoctor Scheduling[] @relation("DoctorScheduling")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Pharmacy {
-  id Int @id @default(autoincrement())
-  medicine_name String
+  medicine_name String @id
   stock Int 
   price Decimal
   medical_records Medical_Record[]
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Medical_Record {
-  id Int @id @default(autoincrement())
-  patient_id Int 
-  doctor_id Int 
+  id String @id @default(uuid())
+  patient_id String
+  doctor_id String
   diagnosis String
-  medicine_id Int
+  medicine_name String
   quantity Int
-  patients Patient @relation(fields: [patient_id], references: [id])
-  doctors Doctor @relation(fields: [doctor_id], references: [id])
-  medicines Pharmacy @relation(fields: [medicine_id], references: [id])
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  patient User @relation("PatientMedicalRecords", fields: [patient_id], references: [id])
+  doctor User @relation("DoctorMedicalRecords", fields: [doctor_id], references: [id])
+  medicines Pharmacy @relation(fields: [medicine_name], references: [medicine_name])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum Status_Scheduling {
@@ -68,16 +63,16 @@ enum Status_Scheduling {
 }
 
 model Scheduling {
-  id Int @id @default(autoincrement())
-  patient_id Int
-  doctor_id Int
+  id String @id @default(uuid())
+  patient_id String
+  doctor_id String
   date DateTime
   status Status_Scheduling
   price Decimal
-  patients Patient @relation(fields: [patient_id], references: [id])
-  doctors Doctor @relation(fields: [doctor_id], references: [id])
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  patient User @relation("PatientScheduling", fields: [patient_id], references: [id])
+  doctor User @relation("DoctorScheduling", fields: [doctor_id], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 } 
 
 enum Status_Billing {
@@ -86,13 +81,13 @@ enum Status_Billing {
   Failed
 }
 model Billing {
-  id Int @id @default(autoincrement())
+  id String @id @default(uuid())
   patient_id Int
   medicine_price Decimal
   scheduling_price Decimal //Scheduling.price
   total_price Decimal
   status Status_Billing
   payment_link String
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
