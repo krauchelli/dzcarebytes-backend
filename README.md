@@ -39,3 +39,7 @@ Run the server:
 ```bash
 npm run dev
 ```
+Database Migration:
+```bash
+npx prisma migrate dev --name init
+```
