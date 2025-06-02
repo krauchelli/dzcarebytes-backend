@@ -13,22 +13,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum User_Role {
-  Admin
-  Doctor
-  Patient
-}
-
 model User {
   id String @id @default(uuid())
   role User_Role
   email String
   name String
   age Int 
+  gender Gender
+  
   medicalRecordsAsPatient Medical_Record[] @relation("PatientMedicalRecords")
   medicalRecordsAsDoctor  Medical_Record[] @relation("DoctorMedicalRecords")
+  
   schedulingAsPatient Scheduling[] @relation("PatientScheduling")
   schedulingAsDoctor Scheduling[] @relation("DoctorScheduling")
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -37,7 +35,9 @@ model Pharmacy {
   medicine_name String @id
   stock Int 
   price Decimal
+
   medical_records Medical_Record[]
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -49,17 +49,14 @@ model Medical_Record {
   diagnosis String
   medicine_name String
   quantity Int
+  
   patient User @relation("PatientMedicalRecords", fields: [patient_id], references: [id])
   doctor User @relation("DoctorMedicalRecords", fields: [doctor_id], references: [id])
+  
   medicines Pharmacy @relation(fields: [medicine_name], references: [medicine_name])
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-enum Status_Scheduling {
-  Scheduled
-  Completed
-  Cancelled
 }
 
 model Scheduling {
@@ -69,17 +66,14 @@ model Scheduling {
   date DateTime
   status Status_Scheduling
   price Decimal
+  
   patient User @relation("PatientScheduling", fields: [patient_id], references: [id])
   doctor User @relation("DoctorScheduling", fields: [doctor_id], references: [id])
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 } 
 
-enum Status_Billing {
-  Pending
-  Paid
-  Failed
-}
 model Billing {
   id String @id @default(uuid())
   patient_id Int
@@ -88,6 +82,30 @@ model Billing {
   total_price Decimal
   status Status_Billing
   payment_link String
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum User_Role {
+  ADMIN
+  DOCTOR
+  PATIENT
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum Status_Scheduling {
+  SCHEDULED
+  COMPLETED
+  CANCELED
+}
+
+enum Status_Billing {
+  PENDING
+  PAID
+  FAILED
 }
