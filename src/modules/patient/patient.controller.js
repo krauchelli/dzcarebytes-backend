@@ -33,7 +33,15 @@ const getPatientById = async (req, res, next) => {
 
 const createPatient = async (req, res, next) => {
     try {
-        const patient = await patientService.createPatient(req.body); // perlu diubah untuk body yang sesuai
+        const { email, password, name, age } = req.body;
+
+        if (!email || !password || !name || typeof age !== 'number') {
+            const err = new Error('Missing or invalid required patient fields');
+            err.status = 400;
+            return next(err);
+        }
+
+        const patient = await patientService.createPatient({ email, password, name, age });
         
         if (!patient) {
             const err = new Error('Invalid patient data');
