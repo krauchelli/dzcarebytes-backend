@@ -263,9 +263,9 @@ const updateDoctor = async (id, doctorData) => {
 };
 
 const deleteDoctor = async (id) => {
-  const adminId = id;
+  const doctorId = id;
 
-  if (adminId) {
+  if (!doctorId) {
     const error = new Error("Invalid doctor ID format");
     error.status = 400;
     throw error;
@@ -273,7 +273,7 @@ const deleteDoctor = async (id) => {
 
   try {
     return prisma.user.delete({
-      where: { id: adminId },
+      where: { id: doctorId },
     });
   } catch (error) {
     if (error.code === "P2025") {
