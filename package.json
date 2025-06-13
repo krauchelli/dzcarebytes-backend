@@ -9,6 +9,9 @@
     "start": "node src/server.js",
     "lint": "eslint . --ext .js,.json"
   },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
   "author": "",
   "license": "ISC",
   "dependencies": {
