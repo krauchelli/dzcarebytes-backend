@@ -17,6 +17,13 @@ const getAllAdmins = async () => {
 
 const getAdminById = async (id) => {
   const adminId = id;
+
+  if (!adminId) {
+    const error = new Error("Invalid admin ID format");
+    error.status = 400;
+    throw error;
+  }
+
   return prisma.user.findUnique({ id: adminId });
 };
 
@@ -51,7 +58,7 @@ const createAdmin = async (adminData) => {
 const updateAdmin = async (id, adminData) => {
   const adminId = id;
 
-  if (isNaN(adminId)) {
+  if (!adminId) {
     const error = new Error("Invalid admin ID format");
     error.status = 400;
     throw error;
@@ -76,7 +83,7 @@ const updateAdmin = async (id, adminData) => {
 const deleteAdmin = async (id) => {
   const adminId = id;
 
-  if (isNaN(adminId)) {
+  if (!adminId) {
     const error = new Error("Invalid admin ID format");
     error.status = 400;
     throw error;
@@ -101,6 +108,13 @@ const getAllPatients = async () => {
 
 const getPatientById = async (id) => {
   const patientId = id;
+
+  if (!patientId) {
+    const error = new Error("Invalid patient ID format");
+    error.status = 400;
+    throw error;
+  }
+
   return prisma.user.findUnique({ id: patientId });
 };
 
@@ -135,7 +149,7 @@ const createPatient = async (patientData) => {
 const updatePatient = async (id, patientData) => {
   const patientId = id;
 
-  if (isNaN(patientId)) {
+  if (!patientId) {
     const error = new Error("Invalid admin ID format");
     error.status = 400;
     throw error;
@@ -160,8 +174,8 @@ const updatePatient = async (id, patientData) => {
 const deletePatient = async (id) => {
   const patientId = id;
 
-  if (isNaN(patientId)) {
-    const error = new Error("Invalid admin ID format");
+  if (!patientId) {
+    const error = new Error("Invalid patient ID format");
     error.status = 400;
     throw error;
   }
@@ -185,6 +199,13 @@ const getAllDoctors = async () => {
 
 const getDoctorById = async (id) => {
   const doctorId = id;
+
+  if (!doctorId) {
+    const error = new Error("Invalid doctor ID format");
+    error.status = 400;
+    throw error;
+  }
+
   return prisma.user.findUnique({ id: doctorId });
 };
 
@@ -219,7 +240,7 @@ const createDoctor = async (doctorData) => {
 const updateDoctor = async (id, doctorData) => {
   const doctorId = id;
 
-  if (isNaN(doctorId)) {
+  if (!doctorId) {
     const error = new Error("Invalid admin ID format");
     error.status = 400;
     throw error;
@@ -244,8 +265,8 @@ const updateDoctor = async (id, doctorData) => {
 const deleteDoctor = async (id) => {
   const adminId = id;
 
-  if (isNaN(adminId)) {
-    const error = new Error("Invalid admin ID format");
+  if (adminId) {
+    const error = new Error("Invalid doctor ID format");
     error.status = 400;
     throw error;
   }
