@@ -24,7 +24,7 @@ const getAdminById = async (id) => {
     throw error;
   }
 
-  return prisma.user.findUnique({ id: adminId });
+  return prisma.user.findUnique({ where: { id: adminId } });
 };
 
 const createAdmin = async (adminData) => {
@@ -115,7 +115,7 @@ const getPatientById = async (id) => {
     throw error;
   }
 
-  return prisma.user.findUnique({ id: patientId });
+  return prisma.user.findUnique({ where: { id: patientId } });
 };
 
 const createPatient = async (patientData) => {
@@ -206,7 +206,7 @@ const getDoctorById = async (id) => {
     throw error;
   }
 
-  return prisma.user.findUnique({ id: doctorId });
+  return prisma.user.findUnique({ where: { id: doctorId } });
 };
 
 const createDoctor = async (doctorData) => {
