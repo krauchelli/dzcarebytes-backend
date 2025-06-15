@@ -272,7 +272,7 @@ const getMedicineByName = async (req, res, next) => {
   try {
     const medicine = await adminService.getMedicineByName(req.params.name);
     if (!medicine) {
-      const err = "Medicine not found";
+      const err = new Error("Medicine not found");
       err.status = 404;
       return next(err);
     }
@@ -289,6 +289,7 @@ const getMedicineByName = async (req, res, next) => {
 const addMedicine = async (req, res, next) => {
   try {
     const medicine = await adminService.addMedicine(req.body);
+    console.log("Medicine added:", medicine);
     res.status(201).json({
       statusCode: 201,
       message: "Medicine added successfully",
@@ -306,7 +307,7 @@ const updateMedicine = async (req, res, next) => {
       req.body
     );
     if (!medicine) {
-      const err = "Medicine not found";
+      const err = new Error("Medicine not found");
       err.status = 404;
       return next(err);
     }
@@ -324,7 +325,7 @@ const deleteMedicine = async (req, res, next) => {
   try {
     const medicine = await adminService.deleteMedicine(req.params.name);
     if (!medicine) {
-      const err = "Medicine not found";
+      const err = new Error("Medicine not found");
       err.status = 404;
       return next(err);
     }
