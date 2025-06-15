@@ -254,6 +254,89 @@ const deleteDoctor = async (req, res, next) => {
   }
 };
 
+// --------------------- MEDICINE CRUD ---------------------
+const getAllMedicines = async (req, res, next) => {
+  try {
+    const medicine = await adminService.getAllMedicines();
+    res.status(200).json({
+      statusCode: 200,
+      message: "Medicine retrieved successfully",
+      data: medicine,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getMedicineByName = async (req, res, next) => {
+  try {
+    const medicine = await adminService.getMedicineByName(req.params.name);
+    if (!medicine) {
+      const err = "Medicine not found";
+      err.status = 404;
+      return next(err);
+    }
+    res.status(200).json({
+      statusCode: 200,
+      message: "Medicine retrieved succsessfully",
+      data: medicine,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const addMedicine = async (req, res, next) => {
+  try {
+    const medicine = await adminService.addMedicine(req.body);
+    res.status(201).json({
+      statusCode: 201,
+      message: "Medicine added successfully",
+      data: medicine,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateMedicine = async (req, res, next) => {
+  try {
+    const medicine = await addMedicine.updateMedicine(
+      req.params.name,
+      req.body
+    );
+    if (!medicine) {
+      const err = "Medicine not found";
+      err.status = 404;
+      return next(err);
+    }
+    res.status(200).json({
+      statusCode: 200,
+      message: "Medicine updated succsessfully",
+      data: medicine,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteMedicine = async (req, res, next) => {
+  try {
+    const medicine = await adminService.deleteMedicine(req.params.name);
+    if (!medicine) {
+      const err = "Medicine not found";
+      err.status = 404;
+      return next(err);
+    }
+    res.status(200).json({
+      statusCode: 200,
+      message: "Medicine deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAllUsers,
   getAllAdmins,
@@ -271,4 +354,9 @@ module.exports = {
   createDoctor,
   updateDoctor,
   deleteDoctor,
+  getAllMedicines,
+  getMedicineByName,
+  addMedicine,
+  updateMedicine,
+  deleteMedicine,
 };

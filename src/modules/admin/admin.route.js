@@ -28,4 +28,11 @@ router.post("/addDoctor", adminController.createDoctor);
 router.put("/editDoctorProfile/:id", adminController.updateDoctor);
 router.delete("/deleteDoctor/:id", adminController.deleteDoctor);
 
+// CRUD MEDICINE
+router.get("/getAllMedicine", adminController.getAllMedicines);
+router.get("/getMedicine/:name", adminController.getMedicineByName);
+router.get("/addMedicine", adminController.addMedicine);
+router.get("/editMedicine/:name", adminController.updateMedicine);
+router.get("/deleteMedicine/:name", adminController.deleteMedicine);
+
 module.exports = router;
