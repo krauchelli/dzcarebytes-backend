@@ -43,3 +43,7 @@ Database Migration:
 ```bash
 npx prisma migrate dev --name init
 ```
+Database Seeder:
+```bash
+npx prisma db seed
+```
