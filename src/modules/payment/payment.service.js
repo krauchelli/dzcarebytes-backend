@@ -30,6 +30,12 @@ const generateSignature = (clientId, requestId, requestTimestamp, requestTarget,
   return `HMACSHA256=${hmac.digest('base64')}`;
 };
 
+const generateInvoiceNumber = () => {
+  const now = new Date();
+  const timestamp = now.toISOString().replace(/[-:]/g, '').replace(/\..+/, '');
+  return `INV-${timestamp}`;
+};
+
 // Create payment request (similar to send_topup_request)
 const createPaymentLink = async (billingData) => {
   if (!DOKU_CLIENT_ID || !DOKU_SECRET_KEY) {
@@ -39,11 +45,14 @@ const createPaymentLink = async (billingData) => {
   const requestId = crypto.randomUUID();
   const requestTimestamp = new Date().toISOString();
   const requestTarget = '/checkout/v1/payment';
+  
+  // Generate invoice number if not exists
+  const invoiceNumber = billingData.invoice_number || generateInvoiceNumber();
 
   const transactionData = {
     order: {
       amount: parseInt(billingData.total_price),
-      invoice_number: billingData.id,
+      invoice_number: invoiceNumber,
       currency: "IDR"
     },
     payment: {
@@ -72,6 +81,29 @@ const createPaymentLink = async (billingData) => {
 
   try {
     const response = await axios.post(`${DOKU_BASE_URL}${requestTarget}`, transactionData, { headers });
+    
+    // Update billing with DOKU data
+    const updatedBilling = await prisma.billing.update({
+      where: { id: billingData.id },
+      data: {
+        invoice_number: invoiceNumber,
+        payment_link: response.data.redirect_url || response.data.payment_url,
+        session_id: response.data.order?.session_id
+      }
+    });
+
+    // Create DOKU transaction log (POC pattern)
+    await prisma.dokuTransactionLog.create({
+      data: {
+        billing_id: billingData.id,
+        session_id: response.data.order?.session_id || 'unknown',
+        amount: parseInt(billingData.total_price),
+        payment_method: response.data.additional_info?.origin?.product || 'unknown',
+        status: 'PENDING',
+        doku_response: response.data
+      }
+    });
+
     return response.data;
   } catch (error) {
     throw new Error(`DOKU API Error: ${error.response?.data?.message || error.message}`);
@@ -81,31 +113,49 @@ const createPaymentLink = async (billingData) => {
 // Process DOKU notification (adapted from your process_doku_notification)
 const processDokuNotification = async (reqBody, headers) => {
   try {
-    const clientId = headers['client-id'];
-    const requestId = headers['request-id'];
-    const requestTimestamp = headers['request-timestamp'];
-    const signature = headers['signature'];
-    const requestTarget = '/doku/payment-notification';
-
     // Extract notification data
     const invoiceNumber = reqBody.order?.invoice_number;
     const status = reqBody.transaction?.status;
     const transactionDate = reqBody.transaction?.date;
     const amount = reqBody.order?.amount;
     const virtualAccountNumber = reqBody.virtual_account_info?.virtual_account_number;
+    const paymentMethod = reqBody.channel?.id;
 
     if (!invoiceNumber) {
       throw new Error('Invoice number not found in notification');
     }
 
-    // Update billing status in database
+    // Find billing by invoice number
+    const billing = await prisma.billing.findUnique({
+      where: { invoice_number: invoiceNumber }
+    });
+
+    if (!billing) {
+      return {
+        statusCode: 404,
+        message: 'Billing not found for invoice number'
+      };
+    }
+
+    // Update billing status
     const billingStatus = status === 'SUCCESS' ? 'PAID' : 'FAILED';
     
     const updatedBilling = await prisma.billing.update({
-      where: { id: invoiceNumber },
+      where: { id: billing.id },
       data: { 
         status: billingStatus,
+        payment_method: paymentMethod,
+        virtual_account_number: virtualAccountNumber,
         payment_processed_at: new Date(transactionDate)
+      }
+    });
+
+    // Update DOKU transaction log (POC pattern)
+    await prisma.dokuTransactionLog.updateMany({
+      where: { billing_id: billing.id },
+      data: {
+        status: billingStatus,
+        payment_method: paymentMethod
       }
     });
 
@@ -115,7 +165,8 @@ const processDokuNotification = async (reqBody, headers) => {
       data: {
         billing_id: updatedBilling.id,
         status: billingStatus,
-        amount: amount
+        amount: amount,
+        payment_method: paymentMethod
       }
     };
   } catch (error) {
@@ -127,6 +178,21 @@ const processDokuNotification = async (reqBody, headers) => {
     }
     throw error;
   }
+};
+
+const getPaymentHistory = async (patientId) => {
+  return await prisma.billing.findMany({
+    where: { 
+      patient_id: patientId,
+      status: { in: ['PAID', 'FAILED'] }
+    },
+    include: {
+      doku_transaction_logs: true,
+      scheduling: { select: { date: true } },
+      medical_record: { select: { diagnosis: true } }
+    },
+    orderBy: { payment_processed_at: 'desc' }
+  });
 };
 
 // Get payment status
@@ -158,5 +224,6 @@ const getPaymentStatus = async (billingId) => {
 module.exports = {
   createPaymentLink,
   processDokuNotification,
-  getPaymentStatus
+  getPaymentStatus,
+  getPaymentHistory
 };
