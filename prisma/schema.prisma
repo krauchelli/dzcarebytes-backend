@@ -28,7 +28,7 @@ model User {
   schedulingAsPatient Scheduling[] @relation("PatientScheduling")
   schedulingAsDoctor Scheduling[] @relation("DoctorScheduling")
 
-  billing Billing[]
+  billings Billing[] @relation("PatientBilling") // Renamed for clarity
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -55,8 +55,10 @@ model Medical_Record {
   
   patient User @relation("PatientMedicalRecords", fields: [patient_id], references: [id])
   doctor User @relation("DoctorMedicalRecords", fields: [doctor_id], references: [id])
-  
   medicines Pharmacy @relation(fields: [medicine_name], references: [medicine_name])
+  
+  // Add billing relation
+  billing Billing?
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -73,20 +75,29 @@ model Scheduling {
   patient User @relation("PatientScheduling", fields: [patient_id], references: [id])
   doctor User @relation("DoctorScheduling", fields: [doctor_id], references: [id])
   
+  // Add billing relation
+  billing Billing?
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 } 
 
 model Billing {
   id String @id @default(uuid())
-  patient_id String
-  medicine_price Decimal
-  scheduling_price Decimal //Scheduling.price
+  patient_id String              // This is actually user.id where role = PATIENT
+  medical_record_id String? @unique      // Optional: consultation without medicine
+  scheduling_id String @unique           // Required: billing always from appointment
+  
+  medicine_price Decimal @default(0)
+  scheduling_price Decimal
   total_price Decimal
   status Status_Billing
-  payment_link String
+  payment_link String?
 
-  patient User @relation(fields: [patient_id], references: [id])
+  // Relations
+  patient User @relation("PatientBilling", fields: [patient_id], references: [id])
+  medical_record Medical_Record? @relation(fields: [medical_record_id], references: [id])
+  scheduling Scheduling @relation(fields: [scheduling_id], references: [id])
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
