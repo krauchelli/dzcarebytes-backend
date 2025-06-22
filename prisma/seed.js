@@ -63,13 +63,15 @@ async function main() {
   ];
 
   for (const name of medicineNames) {
-    await prisma.pharmacy.create({
-      data: {
-        medicine_name: name,
-        stock: Math.floor(Math.random() * 100) + 10,
-        price: (Math.random() * 5000).toFixed(0),
-      },
-    });
+    await prisma.pharmacy.upsert({
+    where: { medicine_name: name },
+    update: {}, // Don't update if exists
+    create: {
+      medicine_name: name,
+      stock: Math.floor(Math.random() * 100) + 10,
+      price: (Math.random() * 5000).toFixed(0),
+    },
+  });
   }
 }
 
