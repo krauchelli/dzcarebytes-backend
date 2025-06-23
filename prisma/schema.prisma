@@ -84,20 +84,49 @@ model Scheduling {
 
 model Billing {
   id String @id @default(uuid())
-  patient_id String              // This is actually user.id where role = PATIENT
-  medical_record_id String? @unique      // Optional: consultation without medicine
-  scheduling_id String @unique           // Required: billing always from appointment
+  patient_id String
+  medical_record_id String? @unique
+  scheduling_id String @unique
   
+  // Pricing breakdown (existing)
   medicine_price Decimal @default(0)
   scheduling_price Decimal
   total_price Decimal
-  status Status_Billing
+  
+  // Enhanced payment tracking
+  invoice_number String @unique         // For DOKU integration
+  payment_method String?               // Virtual account type, QRIS, etc
+  virtual_account_number String?       // For VA payments
+  session_id String?                   // DOKU session tracking
+  
+  // Status tracking
+  status Status_Billing @default(PENDING)
   payment_link String?
-
+  payment_processed_at DateTime?
+  
   // Relations
   patient User @relation("PatientBilling", fields: [patient_id], references: [id])
   medical_record Medical_Record? @relation(fields: [medical_record_id], references: [id])
   scheduling Scheduling @relation(fields: [scheduling_id], references: [id])
+  
+  // New relations (POC-inspired)
+  doku_transaction_logs DokuTransactionLog[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DokuTransactionLog {
+  id String @id @default(uuid())
+  billing_id String
+  session_id String
+  amount Decimal
+  payment_method String
+  status Status_Billing @default(PENDING)
+  doku_response Json?                   // Store full DOKU response
+  
+  // Relations
+  billing Billing @relation(fields: [billing_id], references: [id])
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
