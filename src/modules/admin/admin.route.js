@@ -28,6 +28,13 @@ router.post("/addDoctor", adminController.createDoctor);
 router.put("/editDoctorProfile/:id", adminController.updateDoctor);
 router.delete("/deleteDoctor/:id", adminController.deleteDoctor);
 
+// CRUD SCHEDULE
+router.post("/createSchedule", adminController.createSchedule);
+router.get("/getAllSchedules", adminController.getAllSchedules);
+router.get("/getScheduleById/:id", adminController.getScheduleById);
+router.put("/updateSchedule/:id", adminController.updateSchedule);
+router.delete("/deleteSchedule/:id", adminController.deleteSchedule);
+
 // CRUD MEDICINE
 router.get("/getAllMedicines", adminController.getAllMedicines);
 router.get("/getMedicine/:name", adminController.getMedicineByName);
