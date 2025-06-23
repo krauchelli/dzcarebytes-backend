@@ -1,4 +1,3 @@
-const { scheduling } = require("../../config/prismaClient");
 const adminService = require("../admin/admin.service");
 
 // --------------------- GET ALL USER ---------------------
