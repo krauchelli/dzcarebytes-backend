@@ -1,38 +1,18 @@
 // src/modules/admin/admin.route.js
 const express = require("express");
 const adminController = require("./admin.controller");
+const { authenticateToken, authorizeRoles } = require("../../middlewares/auth.middleware");
 
 const router = express.Router();
 
 // GET ALL USERS
-router.get("/getAllUsers", adminController.getAllUsers);
+router.get("/getAllUsers", authenticateToken, authorizeRoles("ADMIN"), adminController.getAllUsers);
 
 // CRUD ADMIN
-router.get("/getAllAdmins", adminController.getAllAdmins);
-router.get("/getAdmin/:id", adminController.getAdminById);
-router.post("/addAdmin", adminController.createAdmin);
-router.put("/editAdminProfile/:id", adminController.updateAdmin);
-router.delete("/deleteAdmin/:id", adminController.deleteAdmin);
-
-// CRUD PATIENT
-router.get("/getAllPatients", adminController.getAllPatients);
-router.get("/getPatient/:id", adminController.getPatientById);
-router.post("/addPatient", adminController.createPatient);
-router.put("/editPatientProfile/:id", adminController.updatePatient);
-router.delete("/deletePatient/:id", adminController.deletePatient);
-
-// CRUD DOCTOR
-router.get("/getAllDoctors", adminController.getAllDoctors);
-router.get("/getDoctor/:id", adminController.getDoctorById);
-router.post("/addDoctor", adminController.createDoctor);
-router.put("/editDoctorProfile/:id", adminController.updateDoctor);
-router.delete("/deleteDoctor/:id", adminController.deleteDoctor);
-
-// CRUD MEDICINE
-router.get("/getAllMedicines", adminController.getAllMedicines);
-router.get("/getMedicine/:name", adminController.getMedicineByName);
-router.post("/addMedicine", adminController.addMedicine);
-router.put("/editMedicine/:name", adminController.updateMedicine);
-router.delete("/deleteMedicine/:name", adminController.deleteMedicine);
+router.get("/getAllAdmins", authenticateToken, authorizeRoles("ADMIN"), adminController.getAllAdmins);
+router.get("/getAdmin/:id", authenticateToken, authorizeRoles("ADMIN"), adminController.getAdminById);
+router.post("/addAdmin", authenticateToken, authorizeRoles("ADMIN"), adminController.createAdmin);
+router.put("/editAdminProfile/:id", authenticateToken, authorizeRoles("ADMIN"), adminController.updateAdmin);
+router.delete("/deleteAdmin/:id", authenticateToken, authorizeRoles("ADMIN"), adminController.deleteAdmin);
 
 module.exports = router;

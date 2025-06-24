@@ -1,11 +1,13 @@
 const prisma = require("../../config/prismaClient");
+const bcrypt = require("bcryptjs");
+const { generateIdWithPrefix } = require("../../helper/idHelper");
 
 /**
  * Get all patients from database.
  * @returns {Promise<Array>} Array of patients
  */
 const getAllPatients = async () => {
-  return prisma.patient.findMany();
+  return prisma.user.findMany();
 };
 
 /**
@@ -20,7 +22,7 @@ const getPatientById = async (id) => {
     error.status = 400; // Bad Request
     throw error;
   }
-  return prisma.patient.findUnique({
+  return prisma.user.findUnique({
     where: { id: patientId },
   });
 };
@@ -31,23 +33,30 @@ const getPatientById = async (id) => {
  * @returns {Promise<Object>} The created patient object.
  */
 const createPatient = async (patientData) => {
+  const id = generateIdWithPrefix("P");
   // Anda mungkin ingin menambahkan validasi data di sini atau di controller/middleware
   // Contoh: memastikan email unik, password di-hash, dll.
   // Untuk sekarang, kita asumsikan data sudah valid.
-  const { email, password, name, age } = patientData;
-  if (!email || !password || !name || !age) {
+  const { email, password, name, age, gender } = patientData;
+  if (!email || !password || !name || !age || !gender) {
     const error = new Error(
-      "Missing required fields: email, password, name, age"
+      "Missing required fields: email, password, name, age, gender"
     );
     error.status = 400; // Bad Request
     throw error;
   }
-  return prisma.patient.create({
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  return prisma.user.create({
     data: {
+      id,
+      role: "PATIENT",
       email,
-      password, // Ingat untuk melakukan hashing password di aplikasi nyata!
+      password: hashedPassword,
       name,
       age: parseInt(age, 10),
+      gender,
     },
   });
 };
@@ -89,22 +98,23 @@ const updatePatient = async (id, patientData) => {
  * @returns {Promise<Object|null>} The deleted patient object or null if not found.
  */
 const deletePatient = async (id) => {
-  const patientId = parseInt(id, 10);
-  if (isNaN(patientId)) {
+  const patientId = id;
+
+  if (!patientId) {
     const error = new Error("Invalid patient ID format");
-    error.status = 400; // Bad Request
+    error.status = 400;
     throw error;
   }
+
   try {
-    return prisma.patient.delete({
+    return prisma.user.delete({
       where: { id: patientId },
     });
   } catch (error) {
-    // Tangani error spesifik Prisma, misalnya P2025 (Record to delete not found)
     if (error.code === "P2025") {
-      return null; // Kembalikan null jika record tidak ditemukan untuk dihapus
+      return null;
     }
-    throw error; // Lempar ulang error lain
+    throw error;
   }
 };
 
