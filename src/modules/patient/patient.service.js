@@ -24,6 +24,10 @@ const getPatientById = async (id) => {
   }
   return prisma.user.findUnique({
     where: { id: patientId },
+    include: {
+      schedulingAsPatient: true,
+      medicalRecordsAsPatient: true,
+    },
   });
 };
 
