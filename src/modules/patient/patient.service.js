@@ -16,8 +16,8 @@ const getAllPatients = async () => {
  * @returns {Promise<Object|null>} The patient object or null if not found.
  */
 const getPatientById = async (id) => {
-  const patientId = parseInt(id, 10);
-  if (isNaN(patientId)) {
+  const patientId = id;
+  if (!patientId) {
     const error = new Error("Invalid patient ID format");
     error.status = 400; // Bad Request
     throw error;
