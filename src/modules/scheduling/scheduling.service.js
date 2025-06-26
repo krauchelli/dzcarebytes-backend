@@ -1,5 +1,6 @@
 const prisma = require("../../config/prismaClient");
 const { generateIdWithPrefix } = require("../../helper/idHelper");
+const billingService = require('../billing/billing.service');
 
 // --------------------- SCHEDULE ---------------------
 const createSchedule = async (scheduleData) => {
@@ -93,7 +94,8 @@ const updateSchedule = async (id, scheduleData) => {
   }
 
   try {
-    return prisma.scheduling.update({
+    
+    const updatedSchedule = await prisma.scheduling.update({
       where: { id: scheduleId },
       data: dataToUpdate,
       include: {
@@ -113,6 +115,21 @@ const updateSchedule = async (id, scheduleData) => {
       },
     },
     });
+
+    // 🆕 AUTO-GENERATE BILLING when status becomes COMPLETED
+    if (status === 'COMPLETED') {
+      try {
+        console.log(`🔔 Appointment completed, generating billing for scheduling: ${scheduleId}`);
+        await billingService.generateBillingFromCompletedScheduling(scheduleId);
+        console.log(`✅ Billing generated automatically for scheduling: ${scheduleId}`);
+      } catch (billingError) {
+        console.error(`❌ Auto-billing failed for scheduling ${scheduleId}:`, billingError.message);
+        // Don't fail the scheduling update if billing fails
+      }
+    }
+
+    return updatedSchedule;
+  
   } catch (error) {
     if (error.code === "P2025") {
       return null;
