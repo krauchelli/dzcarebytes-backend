@@ -39,6 +39,22 @@ const createSchedule = async (scheduleData) => {
       status,
       price: parseFloat(price),
     },
+    include: {
+      doctor: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      patient: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
   });
 };
 
@@ -80,6 +96,22 @@ const updateSchedule = async (id, scheduleData) => {
     return prisma.scheduling.update({
       where: { id: scheduleId },
       data: dataToUpdate,
+      include: {
+      doctor: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      patient: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
     });
   } catch (error) {
     if (error.code === "P2025") {
