@@ -69,6 +69,21 @@ const updateSchedule = async (req, res, next) => {
       err.status = 404;
       return next(err);
     }
+    try {
+      const { channel } = await rabbitmq.connect();
+      const queueName = 'notification_queue';
+      const message = {
+        type: 'SCHEDULE_UPDATED',
+        timestamp: new Date().toISOString(),
+        data: dataSchedule
+      };
+      await channel.assertQueue(queueName, { durable: true });
+      channel.sendToQueue(queueName, Buffer.from(JSON.stringify(message)), { persistent: true });
+      console.log(`[RabbitMQ] Pesan berhasil dikirim ke antrean '${queueName}'`);
+    } catch (rabbitError) {
+      console.error("Gagal mengirim pesan ke RabbitMQ, tetapi jadwal tetap berhasil diperbarui.", rabbitError);
+    }
+
     res.status(200).json({
       statusCode: 200,
       message: "Schedule updated successfully",
