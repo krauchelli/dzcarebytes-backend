@@ -4,6 +4,21 @@ const schedulingService = require("../scheduling/scheduling.service");
 const createSchedule = async (req, res, next) => {
   try {
     const dataSchedule = await schedulingService.createSchedule(req.body);
+    try {
+      const { channel } = await rabbitmq.connect();
+      const queueName = 'notification_queue';
+      const message = {
+        type: 'SCHEDULE_CREATED',
+        timestamp: new Date().toISOString(),
+        data: dataSchedule
+      };
+      await channel.assertQueue(queueName, { durable: true });
+        channel.sendToQueue(queueName, Buffer.from(JSON.stringify(message)), { persistent: true });
+        console.log(`[RabbitMQ] Pesan berhasil dikirim ke antrean '${queueName}'`);
+      } catch (rabbitError) {
+        console.error("Gagal mengirim pesan ke RabbitMQ, tetapi jadwal tetap berhasil dibuat.", rabbitError);
+    }
+
     res.status(201).json({
       statusCode: 201,
       message: "Schedule created successfully",
