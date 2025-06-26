@@ -7,7 +7,7 @@ const app = express();
 
 const apiLimiter = rateLimit({ 
     windowMs: 60 * 1000, // Jendela waktu 1 menit 
-    max: 10, // Maksimal 20 permintaan per IP dalam 15 menit 
+    max: 10, // Maksimal 10 permintaan per IP dalam 15 menit 
     message: 'Terlalu banyak permintaan, coba lagi setelah 1 menit.', // Pesan jika limit terlampaui 
     standardHeaders: true, // Menambahkan header RateLimit-* ke response 
     legacyHeaders: false,  // Menonaktifkan X-RateLimit-* header 
