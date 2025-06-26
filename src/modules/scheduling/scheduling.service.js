@@ -40,6 +40,22 @@ const createSchedule = async (scheduleData) => {
       status,
       price: parseFloat(price),
     },
+    include: {
+      doctor: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      patient: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
   });
 };
 
@@ -82,6 +98,22 @@ const updateSchedule = async (id, scheduleData) => {
     const updatedSchedule = await prisma.scheduling.update({
       where: { id: scheduleId },
       data: dataToUpdate,
+      include: {
+      doctor: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      patient: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
     });
 
     // 🆕 AUTO-GENERATE BILLING when status becomes COMPLETED
