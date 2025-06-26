@@ -1,3 +1,4 @@
+const rabbitmq = require('../../config/rabbitmq');
 const schedulingService = require("../scheduling/scheduling.service");
 
 // --------------------- SCHEDULE CRUD ---------------------
