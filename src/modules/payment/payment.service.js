@@ -11,11 +11,7 @@ console.log('🔧 DEBUG: DOKU_CLIENT_ID:', DOKU_CLIENT_ID ? DOKU_CLIENT_ID : 'MI
 console.log('🔧 DEBUG: DOKU_SECRET_KEY:', DOKU_SECRET_KEY ? DOKU_SECRET_KEY : 'MISSING');
 
 const SUPPORTED_PAYMENT_METHODS = [
-  "VIRTUAL_ACCOUNT_BCA",
-  "VIRTUAL_ACCOUNT_BNI", 
-  "VIRTUAL_ACCOUNT_BRI",
-  "VIRTUAL_ACCOUNT_MANDIRI",
-  "VIRTUAL_ACCOUNT_PERMATA"
+  "VIRTUAL_ACCOUNT_DOKU",
 ];
 
 // Generate digest (similar to your POC)
@@ -325,9 +321,115 @@ const getPaymentStatus = async (billingId) => {
   return billing;
 };
 
+// minimal doku payment using exact documentation example
+const createPaymentLinkMinimal = async (dokuPayload) => {
+  console.log('🚀 === MINIMAL DOKU PAYMENT (DOCUMENTATION EXAMPLE) ===');
+  console.log('🔧 DEBUG: Using exact DOKU documentation payload');
+
+  // Validation
+  if (!DOKU_CLIENT_ID || !DOKU_SECRET_KEY) {
+    console.error('❌ CRITICAL: DOKU credentials missing');
+    console.error('   - DOKU_CLIENT_ID present:', !!DOKU_CLIENT_ID);
+    console.error('   - DOKU_SECRET_KEY present:', !!DOKU_SECRET_KEY);
+    throw new Error('DOKU credentials not configured');
+  }
+
+  // Request components
+  const requestId = crypto.randomUUID();
+  const requestTimestamp = new Date().toISOString();
+  const requestTarget = '/checkout/v1/payment';
+
+  console.log('🔧 DEBUG: Request components:');
+  console.log('   - Request ID:', requestId);
+  console.log('   - Request Timestamp:', requestTimestamp);
+  console.log('   - Request Target:', requestTarget);
+
+  console.log('🔧 DEBUG: DOKU Documentation Payload (exact):', JSON.stringify(dokuPayload, null, 2));
+
+  // Generate request body and digest (DOKU way)
+  const requestBody = JSON.stringify(dokuPayload);
+  console.log('🔧 DEBUG: Request body (exact string):', requestBody);
+  
+  // Generate digest (base64 only, no SHA-256= prefix)
+  const digest = generateDigest(requestBody);
+  
+  // Generate signature with correct digest format
+  const signature = generateSignature(DOKU_CLIENT_ID, requestId, requestTimestamp, requestTarget, digest, DOKU_SECRET_KEY);
+
+  // Headers
+  const headers = {
+    'Client-Id': DOKU_CLIENT_ID,
+    'Request-Id': requestId,
+    'Request-Timestamp': requestTimestamp,
+    'Signature': signature,
+    'Content-Type': 'application/json'
+  };
+
+  console.log('🔧 DEBUG: Final headers:');
+  Object.entries(headers).forEach(([key, value]) => {
+    if (key === 'Signature') {
+      console.log(`   - ${key}: ${value.substring(0, 20)}...`);
+    } else {
+      console.log(`   - ${key}: ${value}`);
+    }
+  });
+
+  const fullUrl = `${DOKU_BASE_URL}${requestTarget}`;
+  console.log('🔧 DEBUG: Full URL:', fullUrl);
+
+  try {
+    console.log('🌐 DEBUG: Making DOKU API request with MINIMAL payload...');
+    
+    const response = await axios.post(fullUrl, dokuPayload, { 
+      headers,
+      timeout: 30000,
+      validateStatus: () => true
+    });
+
+    console.log('📡 DEBUG: DOKU API Response (Documentation Example):');
+    console.log('   - Status:', response.status);
+    console.log('   - Status Text:', response.statusText);
+    console.log('   - Data:', JSON.stringify(response.data, null, 2));
+
+    if (response.status >= 200 && response.status < 300) {
+      console.log('✅ SUCCESS: Minimal payment link created with documentation example!');
+      console.log('🔗 Payment URL:', response.data.redirect_url || response.data.payment_url);
+      
+      // Don't try to create transaction log for test
+      console.log('🧪 Skipping transaction log for minimal test');
+
+      return response.data;
+    } else {
+      console.error('❌ DOKU API Error (Documentation Example):');
+      console.error('   - Status:', response.status);
+      console.error('   - Error:', JSON.stringify(response.data, null, 2));
+      throw new Error(`DOKU API Error ${response.status}: ${response.data?.error?.message || response.statusText}`);
+    }
+
+  } catch (error) {
+    console.error('💥 API Request Failed (Documentation Example):');
+    console.error('   - Error:', error.message);
+    
+    if (error.response) {
+      console.error('   - Response Status:', error.response.status);
+      console.error('   - Response Data:', JSON.stringify(error.response.data, null, 2));
+    }
+    
+    console.error('🔧 DEBUG: Request details (Documentation Example):');
+    console.error('   - URL:', fullUrl);
+    console.error('   - Headers:', JSON.stringify(headers, null, 2));
+    console.error('   - Body:', requestBody);
+    
+    throw new Error(`DOKU Payment Failed (Documentation Example): ${error.message}`);
+  } finally {
+    console.log('🔚 DEBUG: === MINIMAL DOKU PAYMENT END ===');
+  }
+};
+
 module.exports = {
   createPaymentLink,
   processDokuNotification,
   getPaymentStatus,
-  getPaymentHistory
+  getPaymentHistory,
+  createPaymentLinkMinimal
 };

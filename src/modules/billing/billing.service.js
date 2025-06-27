@@ -83,44 +83,57 @@ const generateBillingFromCompletedScheduling = async (schedulingId) => {
 
   // 7. Generate payment link automatically
   try {
-    const billingWithPatientData = {
-      id: billing.id,
-      total_price: billing.total_price,
-      invoice_number: invoiceNumber,
-      patient_name: scheduling.patient.name,
-      patient_email: scheduling.patient.email
-    };
+  const billingWithPatientData = {
+    id: billing.id,
+    total_price: billing.total_price,
+    invoice_number: invoiceNumber,
+    patient_name: scheduling.patient.name,
+    patient_email: scheduling.patient.email
+  };
 
-    const paymentResponse = await paymentService.createPaymentLink(billingWithPatientData);
-    
-    // Update billing with payment link
-    const updatedBilling = await prisma.billing.update({
-      where: { id: billing.id },
-      data: { payment_link: paymentResponse.redirect_url }
-    });
+  console.log('🔗 Attempting to generate payment link...');
+  const paymentResponse = await paymentService.createPaymentLink(billingWithPatientData);
+  
+  console.log('✅ Payment link generated successfully:', paymentResponse.redirect_url);
+  
+  // Update billing with payment link
+  const updatedBilling = await prisma.billing.update({
+    where: { id: billing.id },
+    data: { payment_link: paymentResponse.redirect_url }
+  });
 
-    return {
-      billing: updatedBilling,
-      scheduling: scheduling,
-      medical_record: medicalRecord,
-      payment_link: paymentResponse.redirect_url,
-      breakdown: {
-        consultation_fee: consultationFee,
-        medicine_fee: medicineFee,
-        total_amount: totalAmount,
-        has_medicine: !!medicalRecord
-      }
-    };
-  } catch (error) {
-    // Payment link generation failed, but billing is created
-    return {
-      billing,
-      scheduling,
-      medical_record: medicalRecord,
-      payment_link: null,
-      error: `Payment link generation failed: ${error.message}`
-    };
-  }
+  return {
+    billing: updatedBilling,
+    scheduling: scheduling,
+    medical_record: medicalRecord,
+    payment_link: paymentResponse.redirect_url,
+    breakdown: {
+      consultation_fee: consultationFee,
+      medicine_fee: medicineFee,
+      total_amount: totalAmount,
+      has_medicine: !!medicalRecord
+    }
+  };
+} catch (error) {
+  console.error('❌ Payment link generation failed:');
+  console.error('   - Error:', error.message);
+  console.error('   - Stack:', error.stack);
+  
+  // Payment link generation failed, but billing is created
+  return {
+    billing,
+    scheduling,
+    medical_record: medicalRecord,
+    payment_link: null,
+    error: `Payment link generation failed: ${error.message}`,
+    breakdown: {
+      consultation_fee: consultationFee,
+      medicine_fee: medicineFee,
+      total_amount: totalAmount,
+      has_medicine: !!medicalRecord
+    }
+  };
+}
 };
 
 module.exports = {
