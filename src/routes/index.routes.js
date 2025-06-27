@@ -7,6 +7,7 @@ const schedulingRoutes = require("../modules/scheduling/scheduling.route.js");
 const medicalRecordRoutes = require("../modules/medical_records/medical_record.route.js");
 const authRoutes = require("../modules/authorization/auth.route.js");
 const medicineRoutes = require("../modules/medicine/medicine.route.js");
+const paymentRoutes = require("../modules/payment/payment.route.js"); // 🧪 ADD THIS
 // Impor rute modul lain di sini
 
 const router = express.Router();
@@ -18,6 +19,7 @@ router.use("/medical_records", medicalRecordRoutes);
 router.use("/auth", authRoutes);
 router.use("/doctors", doctorRoutes);
 router.use("/medicines", medicineRoutes);
+router.use("/payments", paymentRoutes); // 🧪 ADD THIS
 
 // Rute default untuk /api
 router.get("/", (req, res) => {
