@@ -1,0 +1,115 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # RabbitMQ for notifications
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-password}
+    ports:
+      - "5672:5672"   # AMQP port
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # DzCareBytes API Application
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      # Database
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      
+      # App Config
+      NODE_ENV: ${NODE_ENV:-production}
+      HOST: 0.0.0.0
+      PORT: 3000
+      JWT_SECRET: ${JWT_SECRET}
+      
+      # Email Service
+      GMAIL_USER: ${GMAIL_USER}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD}
+      
+      # RabbitMQ
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASSWORD:-password}@rabbitmq:5672
+      
+      # DOKU Payment Gateway
+      DOKU_BASE_URL: ${DOKU_BASE_URL:-https://api-sandbox.doku.com}
+      DOKU_CLIENT_ID: ${DOKU_CLIENT_ID}
+      DOKU_SECRET_KEY: ${DOKU_SECRET_KEY}
+      
+      # Optional features
+      FORCE_MOCK_PAYMENT: ${FORCE_MOCK_PAYMENT:-false}
+      
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    volumes:
+      - ./logs:/usr/src/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Notification Worker Service
+  notification-worker:
+    build: .
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      # Database
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      
+      # App Config
+      NODE_ENV: ${NODE_ENV:-production}
+      
+      # Email Service
+      GMAIL_USER: ${GMAIL_USER}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD}
+      
+      # RabbitMQ
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASSWORD:-password}@rabbitmq:5672
+      
+    restart: unless-stopped
+    command: ["sh", "-c", "./wait-for-it.sh rabbitmq:5672 -- node src/workers/notification_worker.js"]
+    volumes:
+      - ./logs:/usr/src/app/logs
+
+volumes:
+  db_data:
+  rabbitmq_data:
+
+networks:
+  default:
+    name: dzcarebytes-network
