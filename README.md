@@ -86,7 +86,7 @@ npx prisma migrate dev --name init
 #### **Step 5: Deploy with Docker**
 ```bash
 # Build and start all services
-docker-compose up -d
+docker compose -f compose.yml up --build
 
 # Check service status
 docker-compose ps
