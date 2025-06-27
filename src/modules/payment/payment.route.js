@@ -9,4 +9,11 @@ router.post("/callback/doku", paymentController.handleDokuCallback);
 // Get payment status
 router.get("/status/:billingId", paymentController.getPaymentStatus);
 
+// 🧪 NEW: Standalone DOKU test endpoint
+router.post("/test/doku", paymentController.testDokuPayment);
+
+// 🧪 NEW: Test credentials endpoint
+router.get("/test/credentials", paymentController.testDokuCredentials);
+
+
 module.exports = router;

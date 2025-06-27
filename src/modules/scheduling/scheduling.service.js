@@ -94,26 +94,73 @@ const updateSchedule = async (id, scheduleData) => {
   }
 
   try {
-    
+    // 🆕 First, get the current schedule to check existing status
+    const currentSchedule = await prisma.scheduling.findUnique({
+      where: { id: scheduleId },
+      select: { 
+        status: true,
+        patient_id: true,
+        doctor_id: true 
+      }
+    });
+
+    if (!currentSchedule) {
+      const error = new Error("Schedule not found");
+      error.status = 404;
+      throw error;
+    }
+
+    // 🎯 Check if status is already the requested value
+    if (status && currentSchedule.status === status) {
+      const updatedSchedule = await prisma.scheduling.findUnique({
+        where: { id: scheduleId },
+        include: {
+          doctor: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          patient: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      // Return with special flag indicating no change
+      return {
+        ...updatedSchedule,
+        _statusAlreadySet: true,
+        _previousStatus: currentSchedule.status,
+        _message: `The status is already ${status}`
+      };
+    }
+
+    // 🔄 Proceed with normal update if status is different
     const updatedSchedule = await prisma.scheduling.update({
       where: { id: scheduleId },
       data: dataToUpdate,
       include: {
-      doctor: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
+        doctor: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        patient: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
         },
       },
-      patient: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-    },
     });
 
     // 🆕 AUTO-GENERATE BILLING when status becomes COMPLETED
@@ -128,7 +175,12 @@ const updateSchedule = async (id, scheduleData) => {
       }
     }
 
-    return updatedSchedule;
+    return {
+      ...updatedSchedule,
+      _statusAlreadySet: false,
+      _previousStatus: currentSchedule.status,
+      _message: `Status updated from ${currentSchedule.status} to ${status}`
+    };
   
   } catch (error) {
     if (error.code === "P2025") {
