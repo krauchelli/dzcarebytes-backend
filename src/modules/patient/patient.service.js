@@ -37,32 +37,64 @@ const getPatientById = async (id) => {
  * @returns {Promise<Object>} The created patient object.
  */
 const createPatient = async (patientData) => {
+  console.log('📝 Creating patient with data:', { 
+    ...patientData, 
+    password: '[HIDDEN]' 
+  });
+
   const id = generateIdWithPrefix("P");
-  // Anda mungkin ingin menambahkan validasi data di sini atau di controller/middleware
-  // Contoh: memastikan email unik, password di-hash, dll.
-  // Untuk sekarang, kita asumsikan data sudah valid.
   const { email, password, name, age, gender } = patientData;
+
+  // Service-level validation (double-check)
   if (!email || !password || !name || !age || !gender) {
     const error = new Error(
       "Missing required fields: email, password, name, age, gender"
     );
-    error.status = 400; // Bad Request
+    error.status = 400;
     throw error;
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  try {
+    // Check if email already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() }
+    });
 
-  return prisma.user.create({
-    data: {
-      id,
-      role: "PATIENT",
-      email,
-      password: hashedPassword,
-      name,
-      age: parseInt(age, 10),
-      gender,
-    },
-  });
+    if (existingUser) {
+      const error = new Error("Email already exists");
+      error.status = 400;
+      throw error;
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newPatient = await prisma.user.create({
+      data: {
+        id,
+        role: "PATIENT",
+        email: email.toLowerCase(),
+        password: hashedPassword,
+        name,
+        age: parseInt(age, 10),
+        gender: gender.toUpperCase(),
+      },
+    });
+
+    console.log('✅ Patient created successfully in database:', newPatient.id);
+    return newPatient;
+
+  } catch (error) {
+    console.error('❌ Database error creating patient:', error);
+    
+    // Handle Prisma unique constraint errors
+    if (error.code === 'P2002') {
+      const duplicateError = new Error("Email already exists");
+      duplicateError.status = 400;
+      throw duplicateError;
+    }
+    
+    throw error;
+  }
 };
 
 /**
